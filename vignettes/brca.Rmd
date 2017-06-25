@@ -1,0 +1,87 @@
+---
+title: "factorMerger: Breast cancer analysis"
+author: "Agnieszka Sitko"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", warning = FALSE, message = FALSE,
+                      fig.height = 5, fig.width = 10)
+```
+
+```{r}
+library(factorMerger)
+library(forcats)
+library(survival)
+```
+
+
+```{r}
+data("BRCA")
+```
+
+
+# Response - survival
+
+```{r}
+brcaSurv <- Surv(time = BRCA$times, event = BRCA$patient.vital_status)
+```
+
+
+# Factor
+## Drug name
+```{r}
+drugName <- BRCA$patient.drugs.drug.drug_name # drug name
+drugName <- fct_lump(as.factor(drugName), prop = 0.05) 
+
+```
+
+```{r}
+drugNameFM <- mergeFactors(brcaSurv[!is.na(drugName)], 
+                           drugName[!is.na(drugName)], 
+                           family = "survival")
+
+plot(drugNameFM, nodesSpacing = "effects", gicPanelColor = "grey2")
+```
+
+```{r}
+anova(coxph(brcaSurv[!is.na(drugName)]~drugName[!is.na(drugName)]))
+anova(coxph(brcaSurv[!is.na(drugName)]~cutTree(drugNameFM)))
+```
+
+
+## Cancer subtype
+
+```{r}
+subtype <- BRCA$patient.clinical_cqcf.histological_type
+subtype <- fct_lump(as.factor(subtype), prop = 0.05) 
+
+subtypeFM <- mergeFactors(brcaSurv[!is.na(subtype)], 
+                          subtype[!is.na(subtype)],
+                           family = "survival")
+
+plot(subtypeFM) 
+```
+
+## Pathologic category
+
+```{r}
+patCat <- BRCA$patient.stage_event.tnm_categories.pathologic_categories.pathologic_t %>% substr(1, 2)
+
+patCatFM <- mergeFactors(brcaSurv[!is.na(patCat)],
+                         patCat[!is.na(patCat)],
+                         family = "survival")
+
+plot(patCatFM, responsePanel = "frequency", gicPanelColor = "red")
+```
+
+```{r}
+anova(coxph(brcaSurv[!is.na(patCat)]~patCat[!is.na(patCat)]))
+anova(coxph(brcaSurv[!is.na(subtype)]~cutTree(subtypeFM)))
+```
+

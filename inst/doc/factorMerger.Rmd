@@ -1,0 +1,246 @@
+---
+title: "factorMerger: set of tools to support results from post hoc testing"
+author: "Agnieszka Sitko"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", warning = FALSE, message = FALSE,
+                      fig.height = 5, fig.width = 10)
+```
+
+# Introduction
+
+The aim of `factorMerger` is to provide set of tools to support results from post hoc comparisons. Post hoc testing is an analysis performed after running *ANOVA* to examine differences between group means (of some response numeric variable) for each pair of groups (groups are defined by a factor variable).
+
+This project arose from the need to create a method of post hoc testing which gives the hierarchical interpretation of relations between groups means. Thereby, for a given significance level we may divide groups into nonoverlapping clusters. 
+
+# Algorithm inputs
+
+In the current version the **factorMerger** package supports parametric models: 
+
+- one-dimensional Gaussian (with the argument `family = "gaussian"`),
+- multi dimensional Gaussian (with the argument `family = "gaussian"`),
+- binomial (with the argument `family = "binomial"`),
+- survival (with the argument `family = "survival"`).
+
+Set of hypotheses that are tested during merging may be either comprehensive or limited. This gives two possibilities:
+
+- *all-to-all* (with the argument `successive = FALSE`),
+- *successive* (with the argument `successive = TRUE`).
+
+The version *all-to-all* considers all possible pairs of factor levels. In the  *successive* approach factor levels are preliminarily sorted and then only consecutive groups are tested for means equality.
+
+The **factorMerger** package also implements two strategies of a single iteration of the algorithm. They use one of the following:
+
+- *Likelihood Ratio Test* (with the argument `method = "LRT"`),
+- *agglomerative clustering with constant distance matrix* [based on the *DMR4glm* algorithm @Proch, with the argument `method = "hclust"`]. 
+
+# Generating samples 
+
+To visualize functionalities of `factorMerger` we use samples for which response variable is generated from one of the distributions listed above and corresponding factor variable is sampled uniformly from a finite set of a size $k$. 
+
+To do so, we may use function `generateSample` or `generateMultivariateSample`.
+
+```{r}
+library(factorMerger) 
+library(knitr)
+library(dplyr)
+randSample <- generateMultivariateSample(N = 100, k = 10, d = 3)
+```
+
+# Merging factors
+
+`mergeFactors` is a function that performs hierarchical post hoc testing. As arguments it takes:
+
+ - matrix/data.frame/vector with numeric response,
+ - factor vector defining groups.
+ 
+By default (with argument `abbreviate = TRUE`) factor levels are abbreviated and surrounded with brackets.
+
+## Multi-dimensional Gaussian model
+
+
+### Computations
+
+```{r}
+fmAll <- mergeFactors(randSample$response, randSample$factor)
+```
+
+`mergeFactors` outputs with information about the 'merging history'. 
+
+```{r}
+mergingHistory(fmAll, showStats = TRUE) %>% 
+    kable()
+```
+
+Each row of the above frame describes one step of the merging algorithm. First two columns specify which groups were merged in the iteration, columns *model* and *GIC* gather loglikelihood and Generalized Information Criterion for the model after merging. Last two columns are p-values for the *Likelihood Ratio Test* -- against the full model (*pvalVsFull*) and against the previous one (*pvalVsPrevious*).
+
+If we set `successive = TRUE` then at the beginning one dimensional response is fitted using `isoMDS{MASS}`. Next, in each step only groups whose means are closed are compared.
+
+```{r}
+fm <- mergeFactors(randSample$response, randSample$factor, 
+                   successive = TRUE, 
+                   method = "hclust")
+
+mergingHistory(fm, showStats = TRUE) %>% 
+    kable()
+```
+
+### Final clusters
+
+Algorithms implemented in the **factorMerger** package enable to create unequivocal partition of a factor. Below we present how to extract the partition from the `mergeFactor` output.
+
+ - predict new labels for observations
+ 
+```{r}
+cutTree(fm)
+```
+By default, `cutTree` returns a factor split for the optimal GIC (with penalty = 2) model. However, we can specify different metrics (`stat = c("loglikelihood", "p-value", "GIC"`) we would like to use in cutting. If `loglikelihood` or `p-value` is chosen an exact threshold must be given as a `value` parameter. Then `cutTree` returns factor for the smallest model whose statistic is higher than the threshold. If we choose `GIC` then `value` is interpreted as GIC penalty.
+
+```{r}
+mH <- mergingHistory(fm, T)
+thres <- mH$model[nrow(mH) / 2]
+cutTree(fm, stat = "loglikelihood", value = thres)
+```
+In this example data partition is created for the last model from the merging path whose loglikelihood is greater than `r thres`.
+
+ - get final clusters and clusters dictionary
+ 
+```{r}
+getOptimalPartition(fm)
+```
+
+Function `getOptimalPartition` returns a vector with the final cluster names from the factorMerger object. 
+
+```{r}
+getOptimalPartitionDf(fm)
+```
+
+Function `getOptimalPartitionDf` returns a dictionary in a data frame format. Each row gives an original label of a factor level and its new (cluster) label.
+
+
+Similarly to `cutTree`, functions `getOptimalPartition` and `getOptimalPartitionDf` take arguments `stat` and `threshold`.
+
+### Visualizations
+
+We may plot results using function `plot`. 
+
+
+```{r, fig.height = 5, fig.width = 10}
+plot(fm, panel = "all", nodesSpacing = "equidistant", colorCluster = TRUE)
+```
+
+```{r, fig.height = 5, fig.width = 10}
+plot(fmAll, panel = "tree", statistic = "p-value", 
+     nodesSpacing = "effects", colorCluster = TRUE)
+```
+
+```{r}
+plot(fm, colorCluster = TRUE, panel = "response")
+```
+
+The heatmap on the right shows means of all variables taken into analysis by groups.
+
+
+
+```{r, fig.height = 5, fig.width = 10}
+plot(fm, colorCluster = TRUE, panel = "response", responsePanel = "profile")
+```
+
+In the above plots colours are connected with the group. The plot on the right shows means rankings for all variables included in the algorithm. 
+
+
+It is also possible to plot *GIC* together with the merging path plot.
+
+```{r, fig.width = 5}
+plot(fm, panel = "GIC", penalty = 5)
+```
+
+Model with the lowest GIC is marked.
+
+## One-dimensional Gaussian model
+
+```{r}
+oneDimRandSample <- generateSample(1000, 10)
+```
+```{r}
+oneDimFm <- mergeFactors(oneDimRandSample$response, oneDimRandSample$factor, 
+                         method = "hclust")
+mergingHistory(oneDimFm, showStats = TRUE) %>% 
+    kable()
+```
+```{r}
+plot(oneDimFm, palette = "Reds")
+```
+
+```{r}
+plot(oneDimFm, responsePanel = "boxplot", colorCluster = TRUE)
+```
+
+## Binomial model
+
+
+If `family = "binomial"` response must have to values: `0` and `1` (`1` is interpreted as success).
+
+```{r}
+binomRandSample <- generateSample(1000, 10, distr = "binomial")
+table(binomRandSample$response, binomRandSample$factor) %>% 
+    kable()
+```
+
+```{r}
+binomFm <- mergeFactors(binomRandSample$response, 
+                        binomRandSample$factor, 
+                        family = "binomial", 
+                        successive = TRUE)
+mergingHistory(binomFm, showStats = TRUE) %>% 
+    kable()
+```
+
+```{r}
+plot(binomFm, colorCluster = TRUE, gicPanelColor = "red")
+```
+
+```{r}
+plot(binomFm, colorCluster = TRUE, penalty = 7)
+```
+
+```{r}
+plot(binomFm, gicPanelColor = "red")
+```
+
+
+## Survival model
+ 
+If `family = "survival"` response must be of a class `Surv`.
+ 
+```{r}
+library(survival)
+data(veteran)
+survResponse <- Surv(time = veteran$time, 
+                 event = veteran$status)
+survivalFm <- mergeFactors(response = survResponse, 
+                   factor = veteran$celltype, 
+                   family = "survival")
+```
+
+```{r}
+mergingHistory(survivalFm, showStats = TRUE) %>% 
+    kable()
+```
+
+
+```{r}
+plot(survivalFm)
+```
+
+```{r}
+plot(survivalFm, nodesSpacing = "effects", colorCluster = TRUE)
+```
+
