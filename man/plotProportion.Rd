@@ -4,7 +4,7 @@
 \alias{plotProportion}
 \title{Proportion plot (binomial)}
 \usage{
-plotProportion(factorMerger, color, clusterSplit)
+plotProportion(factorMerger, color, clusterSplit, palette = NULL)
 }
 \arguments{
 \item{factorMerger}{object of a class \code{factorMerger}}
@@ -17,6 +17,8 @@ to the final cluster split.}
     \item \code{stat} cluster statistic (available statistics are: \code{"loglikelihood"}, \code{"pvalue"}, \code{"GIC"}),
     \item \code{value} cut threshold / GIC penalty
 }}
+
+\item{palette}{custom palette}
 }
 \description{
 Plots proportion of success for each factor level.

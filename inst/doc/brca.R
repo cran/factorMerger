@@ -4,8 +4,14 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>", warning = FALSE, message 
 
 ## ------------------------------------------------------------------------
 library(factorMerger)
-library(forcats)
 library(survival)
+
+## ------------------------------------------------------------------------
+if (!require("forcats")) {
+    install.packages("forcats")
+}
+library(forcats)
+
 
 ## ------------------------------------------------------------------------
 data("BRCA")

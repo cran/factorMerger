@@ -23,7 +23,6 @@ pisaResultsBySubject <-  meltedPisa %>%
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
     xlab("Country") 
 
-pisaResultsBySubject
 
 ## ------------------------------------------------------------------------
 pisaResultsBySubject + 
@@ -38,23 +37,26 @@ pisaIdxSubset <- sample(1:nrow(pisa2012), size = 500)
 pisaFM <- mergeFactors(pisa2012[pisaIdxSubset, 1:3],
                        factor(pisa2012$CNT[pisaIdxSubset]))
 
-pisaFM
 plot(pisaFM, responsePanel = "profile")
 
 ## ---- eval = FALSE-------------------------------------------------------
-#  pisaFMHClustMath <- mergeFactors(pisa2012[, 1:3],
-#                         factor(pisa2012$CNT),
+#  pisaIdxSubset <- which(pisa2012$CNT %in% c("Belgium",
+#                                             "Netherlands",
+#                                             "Poland",
+#                                             "Germany",
+#                                             "Finland",
+#                                             "Estonia"))
+#  pisaFMHClust <- mergeFactors(pisa2012[pisaIdxSubset, 1:3],
+#                         factor(pisa2012$CNT[pisaIdxSubset]),
 #                         method = "hclust",
 #                         successive = TRUE)
 #  
-#  plot(pisaFMHClustMath)
+#  plot(pisaFMHClust, responsePanel = "profile",
+#       penalty = log(NROW(pisaFMHClustMath$factor)),
+#       panel = "response", nodesSpacing = "effects",
+#       panelGrid = F, palette = "Dark2",
+#       title = "PISA 2012 - students' performance")
 #  
-#  pisaFMHClust <- mergeFactors(pisa2012[, 1:3],
-#                         factor(pisa2012$CNT),
-#                         method = "hclust",
-#                         successive = FALSE)
-#  
-#  plot(pisaFMHClust)
 
 ## ---- eval = FALSE-------------------------------------------------------
 #  

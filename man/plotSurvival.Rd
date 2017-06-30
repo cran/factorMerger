@@ -4,7 +4,7 @@
 \alias{plotSurvival}
 \title{Survival plot (survival)}
 \usage{
-plotSurvival(factorMerger, color, clusterSplit)
+plotSurvival(factorMerger, color, clusterSplit, palette = NULL)
 }
 \arguments{
 \item{factorMerger}{object of a class \code{factorMerger}}
@@ -17,6 +17,8 @@ to the final cluster split.}
     \item \code{stat} cluster statistic (available statistics are: \code{"loglikelihood"}, \code{"pvalue"}, \code{"GIC"}),
     \item \code{value} cut threshold / GIC penalty
 }}
+
+\item{palette}{custom palette}
 }
 \description{
 Plots \code{ggcoxadjustedcurves} from the \code{survminer} package.

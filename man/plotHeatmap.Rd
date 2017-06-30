@@ -4,7 +4,7 @@
 \alias{plotHeatmap}
 \title{Heatmap (multi-dimensional Gaussian)}
 \usage{
-plotHeatmap(factorMerger, color, clusterSplit)
+plotHeatmap(factorMerger, color, clusterSplit, palette)
 }
 \arguments{
 \item{factorMerger}{object of a class \code{factorMerger}}
@@ -17,6 +17,8 @@ to the final cluster split.}
     \item \code{stat} cluster statistic (available statistics are: \code{"loglikelihood"}, \code{"pvalue"}, \code{"GIC"}),
     \item \code{value} cut threshold / GIC penalty
 }}
+
+\item{palette}{custom palette}
 }
 \description{
 Plots heatmap for each dimension of the response variable. Vector of means of factor levels for a given

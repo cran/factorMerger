@@ -23,8 +23,10 @@ reverseOrder <- function(factorMerger, isoMDSproj) {
 #' @importFrom dplyr left_join
 appendProjection.gaussianFactorMerger <- function(factorMerger) {
     if (NCOL(factorMerger$response) > 1) {
-        groupMeans <- calculateMeans(factorMerger$response, factorMerger$factor)
-        tmpResponse <- MASS::isoMDS(dist(groupMeans[, -1]), k = 1, trace = FALSE)$points[, 1] %>%
+        groupMeans <- calculateMeans(factorMerger$response,
+                                     factorMerger$factor)
+        tmpResponse <- MASS::isoMDS(dist(groupMeans[, -1]),
+                                    k = 1, trace = FALSE)$points[, 1] %>%
             as.data.frame()
         tmpResponse$factor <- groupMeans$level
         tmpResponse[, 1] <- reverseOrder(factorMerger, tmpResponse)
@@ -57,7 +59,7 @@ convertToDistanceMatrix <- function(modelsPvals, successive, labels) {
 }
 
 #' @importFrom MASS isoMDS
-startMerging <- function(factorMerger, successive, method, penalty) {
+startMerging <- function(factorMerger, successive, method) {
 
     factorMerger <- appendProjection(factorMerger)
     factorMerger$factor <- getIncreasingFactor(factorMerger)
@@ -70,8 +72,6 @@ startMerging <- function(factorMerger, successive, method, penalty) {
     factorMerger$initialModel <- model
     factorMerger$mergingList[[1]]$modelStats <- data.frame(
         model = initStat,
-        GIC = calculateGIC(model, length(levels(factor)),
-                           penalty),
         pvalVsFull = 1,
         pvalVsPrevious = 1)
 
@@ -85,7 +85,7 @@ startMerging <- function(factorMerger, successive, method, penalty) {
         )
     }
 
-    # method == "hclust"
+    # method "hclust"
     pairs <- getPairList(levels(factorMerger$factor), successive)
     modelsPvals <- sapply(pairs, function(x) {
         if (x[1] == x[2]) {
@@ -97,7 +97,8 @@ startMerging <- function(factorMerger, successive, method, penalty) {
     })
 
     factorMerger$dist <- convertToDistanceMatrix(modelsPvals,
-                                                 successive, levels(factorMerger$factor))
+                                                 successive,
+                                                 levels(factorMerger$factor))
 
     return(factorMerger)
 }
@@ -122,7 +123,9 @@ getsuccessivePairList <- function(groups) {
 }
 
 getAllPairList <- function(groups) {
-    twoLevelList <- lapply(groups, function(x) {lapply(groups, function(y) c(x, y))})
+    twoLevelList <- lapply(groups, function(x) {
+        lapply(groups, function(y) c(x, y))
+        })
     return(unlist(twoLevelList, recursive = FALSE))
 }
 
@@ -159,7 +162,7 @@ recodeClustering <- function(merge, levels, factor) {
     return(res)
 }
 
-mergePairHClust <- function(factorMerger, factor, penalty) {
+mergePairHClust <- function(factorMerger, factor) {
     step <- length(factorMerger$mergingList)
     merged <-  factorMerger$mergingHistory[step, ]
     factorMerger$mergingList <- c(factorMerger$mergingList,
@@ -170,16 +173,16 @@ mergePairHClust <- function(factorMerger, factor, penalty) {
     factor <- mergeLevels(factor, merged[1], merged[2])
     model <- calculateModel(factorMerger, factor)
 
-    factorMerger$mergingList[["tmp"]] <- list(groups = levels(factor),
-                                              modelStats = NULL,
-                                              groupStats = calculateGroupStatistic(
-                                                  factorMerger, factor))
+    factorMerger$mergingList[["tmp"]] <-
+        list(groups = levels(factor),
+             modelStats = NULL,
+             groupStats = calculateGroupStatistic(
+                 factorMerger, factor))
 
     names(factorMerger$mergingList)[step + 1] <- step + 1
 
     factorMerger$mergingList[[step + 1]]$modelStats <-
         data.frame(model = calculateModelStatistic(model),
-                   GIC = calculateGIC(model, length(levels(factor)), penalty),
                    pvalVsFull = compareModels(factorMerger$initialModel, model),
                    pvalVsPrevious = compareModels(prevModel, model))
 
@@ -189,7 +192,7 @@ mergePairHClust <- function(factorMerger, factor, penalty) {
     )
 }
 
-mergePairLRT <- function(factorMerger, successive, factor, model, penalty) {
+mergePairLRT <- function(factorMerger, successive, factor, model) {
     step <- length(factorMerger$mergingList)
     fs <- factorMerger$mergingList[[step]]
     pairs <- getPairList(fs$groups, successive)
@@ -209,14 +212,14 @@ mergePairLRT <- function(factorMerger, successive, factor, model, penalty) {
     factor <- mergeLevels(factor, merged[1], merged[2])
     model <- calculateModel(factorMerger, factor)
 
-    factorMerger$mergingList[[step + 1]] <- list(groups = levels(factor),
-                                              modelStats = NULL,
-                                              groupStats = calculateGroupStatistic(
-                                                  factorMerger, factor))
+    factorMerger$mergingList[[step + 1]] <-
+        list(groups = levels(factor),
+             modelStats = NULL,
+             groupStats = calculateGroupStatistic(
+                 factorMerger, factor))
 
     factorMerger$mergingList[[step + 1]]$modelStats <-
         data.frame(model = calculateModelStatistic(model),
-                   GIC = calculateGIC(model, length(levels(factor)), penalty),
                    pvalVsFull = compareModels(factorMerger$initialModel, model),
                    pvalVsPrevious = pval)
 
@@ -253,18 +256,14 @@ getFinalOrder <- function(factorMerger, reverse = FALSE) {
         names(pos) <- groups
     }
 
-    # if (reverse) {
-    #     names(pos) <- names(pos)[length(groups):1]
-    # }
-
     return(pos)
 }
 
 getStatNameInTable <- function(stat) {
     switch(stat,
-           "loglikelihood" = { return("model") },
-           "p-value" = { return("pvalVsFull") },
-           "GIC" = { return("GIC")} )
+           "loglikelihood" = return("model"),
+           "p-value" = return("pvalVsFull"),
+           "GIC" = return("GIC"))
 }
 
 #' @importFrom dplyr arrange
@@ -277,17 +276,22 @@ getFinalOrderVec <- function(factorMerger) {
 
 #' Cut a Factor Merger Tree
 #'
-#' @description Splits factor levels into non-overlapping clusters based on a \code{factorMerger} object.
-#' If a \code{stat} is \code{"loglikelihood"} or {"p-value"} then performs bottom-up search through models
-#' on the merging path until spots a model scored worse than the given threshold (\code{value}).
-#' If \code{stat = "GIC"}, \code{value} is interpreted as GIC penalty and optimal GIC model is returned..
+#' @description Splits factor levels into non-overlapping clusters
+#' based on a \code{factorMerger} object.
+#' If a \code{stat} is \code{"loglikelihood"} or {"p-value"}
+#' then performs bottom-up search through models
+#' on the merging path until spots a model scored worse
+#' than the given threshold (\code{value}).
+#' If \code{stat = "GIC"}, \code{value} is interpreted as
+#' GIC penalty and optimal GIC model is returned..
 #'
 #' @param factorMerger object of a class \code{factorMerger}
 #' @param stat statistic used in the bottom-up search. Available statistics are:
 #' \code{"loglikelihood"}, \code{"pvalue"}, \code{"GIC"}.
 #' @param value cut threshold or penalty (for GIC)
 #'
-#' @details By default, \code{cutree} returns factor partition corresponding to the optimal GIC model (with the lowest GIC).
+#' @details By default, \code{cutree} returns factor partition
+#' corresponding to the optimal GIC model (with the lowest GIC).
 #'
 #' @return Returns a factor vector - each observation is given a new cluster label.
 #'
@@ -327,17 +331,22 @@ cutTree <- function(factorMerger,
 
 #' Get optimal partition (clusters dictionary)
 #'
-#' @description Splits factor levels into non-overlapping clusters based on a \code{factorMerger} object.
-#' If a \code{stat} is \code{"loglikelihood"} or {"p-value"} then performs bottom-up search through models
-#' on the merging path until spots a model scored worse than the given threshold (\code{value}).
-#' If \code{stat = "GIC"}, \code{value} is interpreted as GIC penalty and optimal GIC model is returned..
+#' @description Splits factor levels into non-overlapping
+#' clusters based on a \code{factorMerger} object.
+#' If a \code{stat} is \code{"loglikelihood"} or {"p-value"}
+#' then performs bottom-up search through models
+#' on the merging path until spots a model scored worse
+#' than the given threshold (\code{value}).
+#' If \code{stat = "GIC"}, \code{value} is interpreted as
+#' GIC penalty and optimal GIC model is returned.
 #'
 #' @param factorMerger object of a class \code{factorMerger}
 #' @param stat statistic used in the bottom-up search. Available statistics are:
 #' \code{"loglikelihood"}, \code{"pvalue"}, \code{"GIC"}.
 #' @param value cut threshold / GIC penalty
 #'
-#' @details By default, \code{cutree} returns factor partition corresponding to the optimal GIC model (with the lowest GIC).
+#' @details By default, \code{cutree} returns factor partition
+#' corresponding to the optimal GIC model (with the lowest GIC).
 #'
 #' @return Returns a dictionary in a data frame format.
 #' Each row gives an original label of a factor level and its new (cluster) label.
@@ -353,17 +362,22 @@ getOptimalPartitionDf <- function(factorMerger,
 
 #' Get optimal partition (final clusters names)
 #'
-#' @description Splits factor levels into non-overlapping clusters based on a \code{factorMerger} object.
-#' If a \code{stat} is \code{"loglikelihood"} or {"p-value"} then performs bottom-up search through models
-#' on the merging path until spots a model scored worse than the given threshold (\code{value}).
-#' If \code{stat = "GIC"}, \code{value} is interpreted as GIC penalty and optimal GIC model is returned..
+#' @description Splits factor levels into non-overlapping
+#' clusters based on a \code{factorMerger} object.
+#' If a \code{stat} is \code{"loglikelihood"} or {"p-value"}
+#' then performs bottom-up search through models
+#' on the merging path until spots a model scored worse than
+#' the given threshold (\code{value}).
+#' If \code{stat = "GIC"}, \code{value} is interpreted as
+#' GIC penalty and optimal GIC model is returned.
 #'
 #' @param factorMerger object of a class \code{factorMerger}
 #' @param stat statistic used in the bottom-up search. Available statistics are:
 #' \code{"loglikelihood"}, \code{"pvalue"}, \code{"GIC"}.
 #' @param value cut threshold / GIC penalty
 #'
-#' @details By default, \code{cutree} returns factor partition corresponding to the optimal GIC model (with the lowest GIC).
+#' @details By default, \code{cutree} returns factor partition
+#' corresponding to the optimal GIC model (with the lowest GIC).
 #'
 #' @return Returns a vector with the final cluster names from the \code{factorMerger} object.
 #'

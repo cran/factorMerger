@@ -1,10 +1,10 @@
 ---
-title: "factorMerger: Breast cancer analysis"
+title: "BRCA - the Cox regression merging"
 author: "Agnieszka Sitko"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{BRCA - the Cox regression factor merging}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
@@ -16,8 +16,14 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>", warning = FALSE, message 
 
 ```{r}
 library(factorMerger)
-library(forcats)
 library(survival)
+```
+```{r}
+if (!require("forcats")) {
+    install.packages("forcats")
+}
+library(forcats)
+
 ```
 
 

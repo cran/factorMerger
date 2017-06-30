@@ -82,7 +82,7 @@ mergingHistory(binomFm, showStats = TRUE) %>%
     kable()
 
 ## ------------------------------------------------------------------------
-plot(binomFm, colorCluster = TRUE, gicPanelColor = "red")
+
 
 ## ------------------------------------------------------------------------
 plot(binomFm, colorCluster = TRUE, penalty = 7)

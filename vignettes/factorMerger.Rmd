@@ -1,10 +1,10 @@
 ---
-title: "factorMerger: set of tools to support results from post hoc testing"
+title: "factorMerger: a set of tools to support results from post-hoc testing"
 author: "Agnieszka Sitko"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{factorMerger: a set of tools to support results from post hoc testing}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
@@ -204,7 +204,7 @@ mergingHistory(binomFm, showStats = TRUE) %>%
 ```
 
 ```{r}
-plot(binomFm, colorCluster = TRUE, gicPanelColor = "red")
+
 ```
 
 ```{r}

@@ -4,7 +4,7 @@
 \alias{plotMeansAndConfInt}
 \title{Means and standard deviation plot (single-dimensional Gaussian)}
 \usage{
-plotMeansAndConfInt(factorMerger, color, clusterSplit)
+plotMeansAndConfInt(factorMerger, color, clusterSplit, palette = NULL)
 }
 \arguments{
 \item{factorMerger}{object of a class \code{factorMerger}}
@@ -17,6 +17,8 @@ to the final cluster split.}
     \item \code{stat} cluster statistic (available statistics are: \code{"loglikelihood"}, \code{"pvalue"}, \code{"GIC"}),
     \item \code{value} cut threshold / GIC penalty
 }}
+
+\item{palette}{custom palette}
 }
 \description{
 For each factor level plots its mean and interval of the length equal to its standard deviation.
