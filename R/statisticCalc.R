@@ -15,10 +15,11 @@ calculateModel.gaussianFactorMerger <- function(factorMerger, factor) {
 
 #' @importFrom survival Surv coxph coxph.control
 calculateModel.survivalFactorMerger <- function(factorMerger, factor) {
+    response <- factorMerger$response
     if (length(unique(factor)) > 1) {
-        return(coxph(factorMerger$response ~ factor))
+        return(coxph(response ~ factor))
     }
-    return(coxph(factorMerger$response ~ 1))
+    return(coxph(response ~ 1))
 }
 
 calculateModel.binomialFactorMerger <- function(factorMerger, factor) {
@@ -83,7 +84,7 @@ calculateAnovaTable <- function(model) {
     UseMethod("calculateAnovaTable", model)
 }
 
-formatSingleRow <- function(num) {
+formatPvalue <- function(num) {
     if (is.na(num)) {
         return("")
     }
@@ -96,47 +97,57 @@ formatSingleRow <- function(num) {
     )
 }
 
-formatPvalue <- function(col) {
-    formatCol <- Vectorize(formatSingleRow)
-    return(
-        formatCol(col)
-    )
-}
-
+# TODO: Bind in one function
 calculateAnovaTable.lm <- function(model) {
-    anTable <- anova(model) %>% data.frame()
-    anTable[, -ncol(anTable)] <- round(anTable[, -ncol(anTable)], 1)
-    anTable[, ncol(anTable)] <- formatPvalue(anTable[, ncol(anTable)])
-    anTable <- anTable[, c("Df", "F.value", "Pr..F.")]
-    colnames(anTable)[2:3] <- c("F", "p-value")
-    rownames(anTable)[2] <- "Res"
+    anTable <- data.frame(
+        pvalue = formatPvalue(round(anova(model)$`Pr(>F)`[1], 4)),
+        nGroups = model$coefficients %>%
+            length(),
+        nObs = model$fitted.values %>%
+            length()
+        )
+
+    anTable <- t(anTable)
+
     return(anTable)
 }
 
 calculateAnovaTable.mlm <- function(model) {
-    anTable <- anova(model) %>% data.frame()
-    anTable[, -ncol(anTable)] <- round(anTable[, -ncol(anTable)], 1)
-    anTable[, ncol(anTable)] <- formatPvalue(anTable[, ncol(anTable)])
-    anTable <- anTable[, -(4:5)]
-    colnames(anTable)[4] <- c("p-value")
-    rownames(anTable)[2] <- "Res"
+    anTable <- data.frame(
+        pvalue = formatPvalue(round(anova(model)$`Pr(>F)`[1], 4)),
+        nGroups = NROW(model$coefficients),
+        nObs = NROW(model$fitted.values)
+    )
+
+    anTable <- t(anTable)
+
     return(anTable)
 }
 
 calculateAnovaTable.binomglm <- function(model) {
-    anTable <- anova(model, test = "Chisq") %>% data.frame()
-    anTable[, -ncol(anTable)] <- round(anTable[, -ncol(anTable)], 1)
-    anTable[, ncol(anTable)] <- formatPvalue(anTable[, ncol(anTable)])
-    anTable <- anTable[, -(2:3)]
-    colnames(anTable)[2:3] <- c("ResDev", "p-value")
+
+    anTable <- data.frame(
+        pvalue = formatPvalue(round(anova(model,
+                                          test = "Chisq")$`Pr(>Chi)`[2], 4)),
+        nGroups = NROW(model$coefficients),
+        nObs = NROW(model$fitted.values)
+    )
+
+    anTable <- t(anTable)
+
     return(anTable)
 }
 
 calculateAnovaTable.coxph <- function(model) {
-    anTable <- anova(model, test = "Chisq") %>% data.frame()
-    anTable[, -ncol(anTable)] <- round(anTable[, -ncol(anTable)], 1)
-    anTable[, ncol(anTable)] <- formatPvalue(anTable[, ncol(anTable)])
-    colnames(anTable)[4] <- c("p-value")
+    anTable <- data.frame(
+        pvalue = formatPvalue(round(anova(model,
+                                          test = "Chisq")$`Pr(>|Chi|)`[2], 4)),
+        nGroups = NROW(model$coefficients) + 1,
+        nObs = model$n
+    )
+
+    anTable <- t(anTable)
+
     return(anTable)
 }
 

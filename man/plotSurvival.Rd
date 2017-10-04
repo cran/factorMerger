@@ -21,5 +21,5 @@ to the final cluster split.}
 \item{palette}{custom palette}
 }
 \description{
-Plots \code{ggcoxadjustedcurves} from the \code{survminer} package.
+Plots adjusted survival curves for coxph model for each group. Survival probabilities are calculated from \code{coxph} model.
 }

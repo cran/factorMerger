@@ -12,13 +12,13 @@ library(reshape2)
 data("pisa2012")
 
 ## ------------------------------------------------------------------------
-pisa2012 %>% ggplot(aes(x = CNT)) + geom_bar() + 
+pisa2012 %>% ggplot(aes(x = country)) + geom_bar() + 
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 ## ------------------------------------------------------------------------
 meltedPisa <- pisa2012 %>% melt(na.rm = TRUE)
 pisaResultsBySubject <-  meltedPisa %>% 
-    ggplot(aes(x = reorder(CNT, value, FUN = median), y = value)) + geom_boxplot() + 
+    ggplot(aes(x = reorder(country, value, FUN = median), y = value)) + geom_boxplot() + 
     facet_wrap(~variable) + 
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
     xlab("Country") 
@@ -30,26 +30,25 @@ pisaResultsBySubject +
                aes(yintercept = mean, group = variable), col = "red")
 
 ## ------------------------------------------------------------------------
-manova(cbind(PV1MATH, PV1READ, PV1SCIE) ~ CNT, pisa2012) %>% summary()
+manova(cbind(math, reading, science) ~ country, pisa2012) %>% summary()
 
 ## ------------------------------------------------------------------------
 pisaIdxSubset <- sample(1:nrow(pisa2012), size = 500)
 pisaFM <- mergeFactors(pisa2012[pisaIdxSubset, 1:3],
-                       factor(pisa2012$CNT[pisaIdxSubset]))
+                       factor(pisa2012$country[pisaIdxSubset]))
 
 plot(pisaFM, responsePanel = "profile")
 
 ## ---- eval = FALSE-------------------------------------------------------
-#  pisaIdxSubset <- which(pisa2012$CNT %in% c("Belgium",
+#  pisaIdxSubset <- which(pisa2012$country %in% c("Belgium",
 #                                             "Netherlands",
 #                                             "Poland",
 #                                             "Germany",
 #                                             "Finland",
 #                                             "Estonia"))
 #  pisaFMHClust <- mergeFactors(pisa2012[pisaIdxSubset, 1:3],
-#                         factor(pisa2012$CNT[pisaIdxSubset]),
-#                         method = "hclust",
-#                         successive = TRUE)
+#                         factor(pisa2012$country[pisaIdxSubset]),
+#                         method = "fast-fixed")
 #  
 #  plot(pisaFMHClust, responsePanel = "profile",
 #       penalty = log(NROW(pisaFMHClustMath$factor)),
@@ -60,7 +59,7 @@ plot(pisaFM, responsePanel = "profile")
 
 ## ---- eval = FALSE-------------------------------------------------------
 #  
-#  pisaEuropean <- filter(pisa2012, CNT %in% c("Austria", "Belgium", "Bulgaria",
+#  pisaEuropean <- filter(pisa2012, country %in% c("Austria", "Belgium", "Bulgaria",
 #                                              "Czech Republic", "Germany", "Denmark",
 #                                              "Spain", "Estonia", "Finland",
 #                                              "France", "Hungary", "Ireland",
@@ -71,9 +70,8 @@ plot(pisaFM, responsePanel = "profile")
 #  
 #  
 #  pisaFMHClustEurope <- mergeFactors(pisaEuropean[,1:3],
-#                         factor(pisaEuropean$CNT),
-#                         method = "hclust",
-#                         successive = TRUE)
+#                         factor(pisaEuropean$country),
+#                         method = "fast-fixed")
 #  
 #  plot(pisaFMHClustEurope)
 #  

@@ -7,15 +7,28 @@
 #' @importFrom utils head tail
 #' @importFrom proxy dist
 #' @importFrom agricolae HSD.test
+#' @importFrom dplyr select_ setequal
 NULL
 
+# Clean this below!
 globalVariables(c("x1", "x2", "y1", "y2", "y0",
                   "pred", "group", "y",
                   "variable", "value", "stat", "significance",
-                  "level", "hjust", "vjust", "label", "left", "n", "right",
+                  "level", "hjust", "vjust", "label",
+                  "left", "n", "right",
                   "L1", "V0", "V05", "V1", "V2",
                   "xmin", "xpos", "y100", "y25", "xmax",
                   "y50", "y75", "ymax", "ymin", "ypos"))
+
+cleanFactor <- function(factor) {
+    factor <- as.factor(factor)
+    levs <- levels(factor)
+    factor <- droplevels(factor)
+    if (!setequal(levels(factor), levs)) {
+        warning("Dropped missing levels of the factor.")
+    }
+    return(factor)
+}
 
 merger <- function(response, factor,
                    family = "gaussian",
@@ -23,7 +36,7 @@ merger <- function(response, factor,
 
     stopifnot(NROW(response) == NROW(factor))
 
-    factor <- as.factor(factor)
+    factor <- cleanFactor(factor)
 
     if (abbreviate) {
         map <- data.frame(
@@ -140,7 +153,6 @@ mergingHistory <- function(factorMerger, showStats = FALSE,
         as.data.frame(stringsAsFactors = FALSE) %>%
         rename(groupA = V1, groupB = V2)
 
-    rownames(mergingDf) <- NULL
     if (showStats) {
         st <- stats(factorMerger)
         if (round) {
@@ -155,6 +167,7 @@ mergingHistory <- function(factorMerger, showStats = FALSE,
         mergingDf$GIC <- -2 * mergingDf$model +
             penalty * nrow(mergingDf):1
     }
+    rownames(mergingDf) <- as.character(0:(nrow(mergingDf) - 1))
 
     return(mergingDf)
 }
@@ -190,6 +203,7 @@ call <- function(factorMerger) {
 #'
 print.factorMerger <- function(x, ...) {
    df <- mergingHistory(x, showStats = TRUE)
+   rownames(df) <- as.character(0:(nrow(df) - 1))
    colnames(df)[1:2] <- c("groupA", "groupB")
    cat(call(x))
 
@@ -213,11 +227,46 @@ print.factorMerger <- function(x, ...) {
 #' @param family Model family to be used in merging. Available models are: \code{"gaussian",}
 #' \code{ "survival", "binomial"}.
 #' By default \code{mergeFactors} uses \code{"gaussian"} model.
-#' @param successive If \code{FALSE}, the default,
-#' in each step of the merging procedure all possible pairs are compared.
-#' Otherwise, factor levels are preliminarly sorted and only succesive pairs are compared.
 #' @param method A string specifying method used during merging.
-#' Two methods are availabel: \code{"hclust", "LRT"}. The default is \code{"LRT"}.
+#' Four methods are available:
+#' \itemize{
+#' \item \code{method = "adaptive"}. The objective function that is maximized
+#' throughout procedure is the logarithm of likelihood. The set of pairs enabled to merge
+#' contains all possible pairs of groups available in a given step.
+#' Pairwise LRT distances are recalculated every step.
+#' This option is the slowest one since it requires the largest number
+#' of comparisons. It requires {O}(k^3) model evaluations. (with k - the initial number of groups)
+#' \item \code{method = "fast-adaptive"}.
+#' For Gaussian family of response, at the very beginning, the groups are ordered according to increasing
+#' averages and then the set of pairs compared contains only pairs of closest groups.
+#' For other families the order corresponds to beta coefficients in
+#' a regression model.
+#' This option is much faster than \code{method = "adaptive"} and requires {O}(k^2) model evaluations.
+#' \item \code{method = "fixed"}. This option is based on the DMR
+#' algorithm introduced in \cite{Proch}. It was extended to cover
+#' survival models. The largest difference between this option and
+#' the \code{method = "adaptive"} is, that in the first
+#' step a pairwise distances are calculated between each groups
+#' based on the LRT statistic. Then the agglomerative clustering algorithm
+#' is used to merge consecutive pairs. It means that pairwise model differences
+#' are not recalculated as LRT statistics in every step but the
+#' \code{complete linkage} is used instead.
+#' This option is very fast and requires {O}(k^2) comparisons.
+#' \item \code{method = "fast-fixed"}. This option may be considered
+#' as a modification of \code{method = "fixed"}.
+#' Here, similarly as in the \code{fast-adaptive} version,
+#' we assume that if groups A, B and C are sorted according to their
+#' increasing beta coefficients, then the distance between groups A and B
+#' and the distance between groups B and C are not greater than the
+#' distance between groups A and C. This assumption enables to implement
+#' the \code{complete linkage} clustering more efficiently in a dynamic manner.
+#' The biggest difference is that in the first step we do not calculated
+#' whole matrix of pairwise differences, but instead only the differences
+#' between consecutive groups. Then in each step a only single distance is
+#' calculated. This helps to reduce the number of model evaluations to {O}(n).
+#' }
+#' The default option is \code{"fast-adaptive"}.
+#'
 #' @param abbreviate Logical. If \code{TRUE}, the default, factor levels names
 #' are abbreviated.
 #'
@@ -229,12 +278,14 @@ print.factorMerger <- function(x, ...) {
 #'
 mergeFactors <- function(response, factor,
                          family = "gaussian",
-                         successive = FALSE,
-                         method = "LRT",
+                         method = "fast-adaptive",
                          abbreviate = TRUE) {
 
     stopifnot(!is.null(response), !is.null(factor))
+    stopifnot(method %in% c("adaptive", "fast-adaptive",
+                            "fixed", "fast-fixed"))
 
+    successive  <- ifelse(grepl("fast", method), TRUE, FALSE)
 
     if (is.data.frame(response)) {
         response <- as.matrix(response)
@@ -242,17 +293,11 @@ mergeFactors <- function(response, factor,
 
     fm <- merger(response, factor, family, abbreviate)
 
-    if (method == "LRT") {
+    if (grepl("adaptive", method)) {
         return(mergeLRT(fm, successive))
     }
 
-    if (method == "hclust") {
-        return(mergeHClust(fm, successive))
-    }
-
-    else {
-        stop("Requested method of merging is not supported.")
-    }
+    return(mergeHClust(fm, successive))
 }
 
 mergeLRT <- function(factorMerger, successive) {
@@ -268,10 +313,92 @@ mergeLRT <- function(factorMerger, successive) {
     return(fmList$factorMerger)
 }
 
+getPairWithLowestDist <- function(distance, pos) {
+    return(distance[pos, ] %>%
+               select_("firstClusterLabel", "lastClusterLabel"))
+}
+
+replaceWithMergedPair <- function(distance, pos, toBeMerged) {
+    mergedLabel <- paste0(toBeMerged, collapse = "")
+    if (pos > 1) {
+        distance[pos - 1, "lastClusterLabel"] <- mergedLabel
+    }
+    if (pos < nrow(distance)) {
+        distance[pos + 1, "firstClusterLabel"] <- mergedLabel
+    }
+    return(distance)
+}
+
+updateRowAfterMerging <- function(distance, newPos, origPos,
+                                  factorMerger, which) {
+    initStat <- factorMerger$mergingList[[1]]$modelStats$model
+    distance[newPos, which] <- distance[origPos, which]
+    newPair <- distance[newPos, c("first", "last")]
+    tmpFactor <- mergeLevels(factorMerger$factor,
+                             newPair[1], newPair[2])
+    tmpModel <- calculateModel(factorMerger, tmpFactor)
+    distance[newPos, "dist"] <-
+        2 * initStat - 2 * calculateModelStatistic(tmpModel)
+    return(distance)
+}
+
+updateDistAfterMerging <- function(factorMerger, pos, toBeMerged) {
+    distance <- factorMerger$dist
+    if (pos > 1) {
+        distance <- updateRowAfterMerging(distance, pos - 1, pos,
+                                          factorMerger, "last")
+    }
+    if (pos < nrow(distance)) {
+        distance <- updateRowAfterMerging(distance, pos + 1, pos,
+                                          factorMerger, "first")
+    }
+    distance <- distance[-pos, ]
+    return(distance)
+}
+
+addNewPairToMergingHistory <- function(factorMerger, toBeMerged) {
+    toBeMerged <- unname(toBeMerged)
+    if (length(factorMerger$mergingList) == 1) {
+        return(as.matrix(toBeMerged))
+    }
+    mH <- factorMerger$mergingHistory
+    mH <- rbind(mH, unname(as.matrix(toBeMerged)))
+    return(mH)
+}
+
+mergeSuccessiveHClust <- function(factorMerger) {
+    factor <- factorMerger$factor
+    for (step in 1:(length(levels(factorMerger$factor)) - 1)) {
+        # Take pair p of A and B with the lowest distance
+        mergingPositionInTable <- which.min(factorMerger$dist$dist)
+        toBeMerged <- getPairWithLowestDist(factorMerger$dist,
+                                            mergingPositionInTable)
+        # mergePairHClust with p (add to the merging list)
+        factorMerger$mergingHistory <-
+            addNewPairToMergingHistory(factorMerger, toBeMerged)
+        fm <- mergePairHClust(factorMerger, factor)
+        factorMerger <- fm$factorMerger
+        factor <- fm$factor
+        # Replace clusterLabels in the factorMerger$dist
+        factorMerger$dist <- replaceWithMergedPair(factorMerger$dist,
+                                                   mergingPositionInTable,
+                                                   toBeMerged)
+
+        factorMerger$dist <- updateDistAfterMerging(factorMerger,
+                                                   mergingPositionInTable,
+                                                   toBeMerged)
+    }
+    return(factorMerger)
+}
 
 mergeHClust <- function(factorMerger, successive) {
     factorMerger <- startMerging(factorMerger, successive, "hclust")
-    clust <- clusterFactors(factorMerger$dist, successive)
+    if (successive) {
+        return(mergeSuccessiveHClust(factorMerger))
+    }
+
+    # Original DMR
+    clust <- clusterFactors(factorMerger$dist)
     factorMerger$mergingHistory <-
         recodeClustering(clust$merge,
                          clust$labels,

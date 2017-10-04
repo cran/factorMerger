@@ -17,10 +17,10 @@ library(forcats)
 data("BRCA")
 
 ## ------------------------------------------------------------------------
-brcaSurv <- Surv(time = BRCA$times, event = BRCA$patient.vital_status)
+brcaSurv <- Surv(time = BRCA$time, event = BRCA$vitalStatus)
 
 ## ------------------------------------------------------------------------
-drugName <- BRCA$patient.drugs.drug.drug_name # drug name
+drugName <- BRCA$drugName # drug name
 drugName <- fct_lump(as.factor(drugName), prop = 0.05) 
 
 
@@ -32,11 +32,11 @@ drugNameFM <- mergeFactors(brcaSurv[!is.na(drugName)],
 plot(drugNameFM, nodesSpacing = "effects", gicPanelColor = "grey2")
 
 ## ------------------------------------------------------------------------
-anova(coxph(brcaSurv[!is.na(drugName)]~drugName[!is.na(drugName)]))
-anova(coxph(brcaSurv[!is.na(drugName)]~cutTree(drugNameFM)))
+anova(coxph(brcaSurv[!is.na(drugName)] ~ drugName[!is.na(drugName)]))
+anova(coxph(brcaSurv[!is.na(drugName)] ~ cutTree(drugNameFM)))
 
 ## ------------------------------------------------------------------------
-subtype <- BRCA$patient.clinical_cqcf.histological_type
+subtype <- BRCA$histologicalType
 subtype <- fct_lump(as.factor(subtype), prop = 0.05) 
 
 subtypeFM <- mergeFactors(brcaSurv[!is.na(subtype)], 
@@ -46,7 +46,7 @@ subtypeFM <- mergeFactors(brcaSurv[!is.na(subtype)],
 plot(subtypeFM) 
 
 ## ------------------------------------------------------------------------
-patCat <- BRCA$patient.stage_event.tnm_categories.pathologic_categories.pathologic_t %>% substr(1, 2)
+patCat <- BRCA$pathologicCategory %>% substr(1, 2)
 
 patCatFM <- mergeFactors(brcaSurv[!is.na(patCat)],
                          patCat[!is.na(patCat)],
@@ -55,6 +55,6 @@ patCatFM <- mergeFactors(brcaSurv[!is.na(patCat)],
 plot(patCatFM, responsePanel = "frequency", gicPanelColor = "red")
 
 ## ------------------------------------------------------------------------
-anova(coxph(brcaSurv[!is.na(patCat)]~patCat[!is.na(patCat)]))
-anova(coxph(brcaSurv[!is.na(subtype)]~cutTree(subtypeFM)))
+anova(coxph(brcaSurv[!is.na(patCat)] ~ patCat[!is.na(patCat)]))
+anova(coxph(brcaSurv[!is.na(subtype)] ~ cutTree(subtypeFM)))
 

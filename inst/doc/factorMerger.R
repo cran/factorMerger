@@ -17,8 +17,7 @@ mergingHistory(fmAll, showStats = TRUE) %>%
 
 ## ------------------------------------------------------------------------
 fm <- mergeFactors(randSample$response, randSample$factor, 
-                   successive = TRUE, 
-                   method = "hclust")
+                   method = "fast-fixed")
 
 mergingHistory(fm, showStats = TRUE) %>% 
     kable()
@@ -37,7 +36,7 @@ getOptimalPartition(fm)
 ## ------------------------------------------------------------------------
 getOptimalPartitionDf(fm)
 
-## ---- fig.height = 5, fig.width = 10-------------------------------------
+## ---- fig.height = 9, fig.width = 18-------------------------------------
 plot(fm, panel = "all", nodesSpacing = "equidistant", colorCluster = TRUE)
 
 ## ---- fig.height = 5, fig.width = 10-------------------------------------
@@ -58,7 +57,7 @@ oneDimRandSample <- generateSample(1000, 10)
 
 ## ------------------------------------------------------------------------
 oneDimFm <- mergeFactors(oneDimRandSample$response, oneDimRandSample$factor, 
-                         method = "hclust")
+                         method = "fixed")
 mergingHistory(oneDimFm, showStats = TRUE) %>% 
     kable()
 
@@ -77,7 +76,7 @@ table(binomRandSample$response, binomRandSample$factor) %>%
 binomFm <- mergeFactors(binomRandSample$response, 
                         binomRandSample$factor, 
                         family = "binomial", 
-                        successive = TRUE)
+                        method = "fast-adaptive")
 mergingHistory(binomFm, showStats = TRUE) %>% 
     kable()
 
@@ -91,21 +90,22 @@ plot(binomFm, colorCluster = TRUE, penalty = 7)
 plot(binomFm, gicPanelColor = "red")
 
 ## ------------------------------------------------------------------------
-library(survival)
-data(veteran)
-survResponse <- Surv(time = veteran$time, 
-                 event = veteran$status)
-survivalFm <- mergeFactors(response = survResponse, 
-                   factor = veteran$celltype, 
-                   family = "survival")
+# TODO: Waiting for CRAN update for survival
+# library(survival)
+# data(veteran)
+# survResponse <- Surv(time = veteran$time, 
+#                  event = veteran$status)
+# survivalFm <- mergeFactors(response = survResponse, 
+#                    factor = veteran$celltype, 
+#                    family = "survival")
 
 ## ------------------------------------------------------------------------
-mergingHistory(survivalFm, showStats = TRUE) %>% 
-    kable()
+# mergingHistory(survivalFm, showStats = TRUE) %>%
+#     kable()
 
 ## ------------------------------------------------------------------------
-plot(survivalFm)
+# plot(survivalFm)
 
 ## ------------------------------------------------------------------------
-plot(survivalFm, nodesSpacing = "effects", colorCluster = TRUE)
+# plot(survivalFm, nodesSpacing = "effects", colorCluster = TRUE)
 
