@@ -32,47 +32,11 @@ pisaResultsBySubject +
 ## ------------------------------------------------------------------------
 manova(cbind(math, reading, science) ~ country, pisa2012) %>% summary()
 
-## ------------------------------------------------------------------------
-pisaIdxSubset <- sample(1:nrow(pisa2012), size = 500)
-pisaFM <- mergeFactors(pisa2012[pisaIdxSubset, 1:3],
-                       factor(pisa2012$country[pisaIdxSubset]))
+## ---- fig.width=10, fig.height=10----------------------------------------
+pisaFMHClustEurope <- mergeFactors(response = pisa2012[,1:3],
+                       factor = factor(pisa2012$country),
+                       method = "fast-fixed") 
 
-plot(pisaFM, responsePanel = "profile")
+plot(pisaFMHClustEurope)
 
-## ---- eval = FALSE-------------------------------------------------------
-#  pisaIdxSubset <- which(pisa2012$country %in% c("Belgium",
-#                                             "Netherlands",
-#                                             "Poland",
-#                                             "Germany",
-#                                             "Finland",
-#                                             "Estonia"))
-#  pisaFMHClust <- mergeFactors(pisa2012[pisaIdxSubset, 1:3],
-#                         factor(pisa2012$country[pisaIdxSubset]),
-#                         method = "fast-fixed")
-#  
-#  plot(pisaFMHClust, responsePanel = "profile",
-#       penalty = log(NROW(pisaFMHClustMath$factor)),
-#       panel = "response", nodesSpacing = "effects",
-#       panelGrid = F, palette = "Dark2",
-#       title = "PISA 2012 - students' performance")
-#  
-
-## ---- eval = FALSE-------------------------------------------------------
-#  
-#  pisaEuropean <- filter(pisa2012, country %in% c("Austria", "Belgium", "Bulgaria",
-#                                              "Czech Republic", "Germany", "Denmark",
-#                                              "Spain", "Estonia", "Finland",
-#                                              "France", "Hungary", "Ireland",
-#                                              "Italy", "Netherlands", "Norway",
-#                                              "Poland", "Portugal",
-#                                              "Russian Federation", "Slovak Republic",
-#                                              "Slovenia"))
-#  
-#  
-#  pisaFMHClustEurope <- mergeFactors(pisaEuropean[,1:3],
-#                         factor(pisaEuropean$country),
-#                         method = "fast-fixed")
-#  
-#  plot(pisaFMHClustEurope)
-#  
 

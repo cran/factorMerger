@@ -9,14 +9,14 @@ library(dplyr)
 randSample <- generateMultivariateSample(N = 100, k = 10, d = 3)
 
 ## ------------------------------------------------------------------------
-fmAll <- mergeFactors(randSample$response, randSample$factor)
+fmAll <- mergeFactors(response = randSample$response, factor = randSample$factor)
 
 ## ------------------------------------------------------------------------
 mergingHistory(fmAll, showStats = TRUE) %>% 
     kable()
 
 ## ------------------------------------------------------------------------
-fm <- mergeFactors(randSample$response, randSample$factor, 
+fm <- mergeFactors(response = randSample$response, factor = randSample$factor, 
                    method = "fast-fixed")
 
 mergingHistory(fm, showStats = TRUE) %>% 
@@ -56,7 +56,7 @@ plot(fm, panel = "GIC", penalty = 5)
 oneDimRandSample <- generateSample(1000, 10)
 
 ## ------------------------------------------------------------------------
-oneDimFm <- mergeFactors(oneDimRandSample$response, oneDimRandSample$factor, 
+oneDimFm <- mergeFactors(response = oneDimRandSample$response, factor = oneDimRandSample$factor, 
                          method = "fixed")
 mergingHistory(oneDimFm, showStats = TRUE) %>% 
     kable()
@@ -73,8 +73,8 @@ table(binomRandSample$response, binomRandSample$factor) %>%
     kable()
 
 ## ------------------------------------------------------------------------
-binomFm <- mergeFactors(binomRandSample$response, 
-                        binomRandSample$factor, 
+binomFm <- mergeFactors(response = binomRandSample$response, 
+                        factor = binomRandSample$factor, 
                         family = "binomial", 
                         method = "fast-adaptive")
 mergingHistory(binomFm, showStats = TRUE) %>% 
@@ -90,22 +90,21 @@ plot(binomFm, colorCluster = TRUE, penalty = 7)
 plot(binomFm, gicPanelColor = "red")
 
 ## ------------------------------------------------------------------------
-# TODO: Waiting for CRAN update for survival
-# library(survival)
-# data(veteran)
-# survResponse <- Surv(time = veteran$time, 
-#                  event = veteran$status)
-# survivalFm <- mergeFactors(response = survResponse, 
-#                    factor = veteran$celltype, 
-#                    family = "survival")
+ library(survival)
+ data(veteran)
+ survResponse <- Surv(time = veteran$time, 
+                  event = veteran$status)
+ survivalFm <- mergeFactors(response = survResponse, 
+                    factor = veteran$celltype, 
+                    family = "survival")
 
 ## ------------------------------------------------------------------------
-# mergingHistory(survivalFm, showStats = TRUE) %>%
-#     kable()
+ mergingHistory(survivalFm, showStats = TRUE) %>%
+     kable()
 
 ## ------------------------------------------------------------------------
-# plot(survivalFm)
+ plot(survivalFm)
 
 ## ------------------------------------------------------------------------
-# plot(survivalFm, nodesSpacing = "effects", colorCluster = TRUE)
+ plot(survivalFm, nodesSpacing = "effects", colorCluster = TRUE)
 

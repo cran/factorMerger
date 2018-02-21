@@ -8,14 +8,16 @@
 data(pisa2012)
 }
 \description{
-Data from the \code{PISA2012lite} package.
+Data from the \code{PISA2012lite} package (European countries only).
 }
 \details{
 The original dataset (Program for International Student Assesment, \url{http://www.oecd.org/pisa/}) contains information on students'
 performance on various cognitive tests expressed with so-called plausible values measured in three fields: Mathematics (\code{PV1MATH}),
 Science (\code{PV1SCIE}) and Reading (\code{PV1READ}).
 
-\code{pisa2012} is a reweighted version of the \code{PISA2012lite} data. The weighting was performed using the \code{W_FSTUWT} variable.
+\code{pisa2012} is a reweighted version of the \code{PISA2012lite} data. 
+The weighting was performed using the \code{W_FSTUWT} variable with the seed 123. 
+Then only European countries were chosen.
 
 The variables are as follows (original column names from the \code{PISA2012lite} package are given in brackets):
 

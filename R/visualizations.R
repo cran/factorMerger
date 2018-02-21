@@ -21,9 +21,6 @@ NULL
 #' @importFrom ggpubr ggarrange
 NULL
 
-#' @importFrom grDevices hcl
-NULL
-
 #' Plot Factor Merger
 #'
 #' @param x object of a class \code{factorMerger}.
@@ -141,7 +138,17 @@ plot.factorMerger <- function(x, panel = "all",
                return(mergingPathPlot)
            },
            "all" = {
-               aovTable <- plotTable(calculateAnovaTable(x$initialModel))
+             anTable <- calculateAnovaTable(x$initialModel)
+             if(length(x$covariates)>0){
+               if(class(x)[2]=="gaussianFactorMerger"){
+                 anTable <- t(anTable)
+                 nGroups <- as.numeric(anTable[1,2])
+                 nGroups <- nGroups-dim(x$covariates)[2]
+                 anTable[1,2] <- nGroups 
+                 anTable <- t(anTable)
+               }
+             }
+               aovTable <- plotTable(anTable)
                return(ggarrange(mergingPathPlot, responsePlot,
                                    plotGIC(x, gicPanelColor,
                                            penalty, statistic),
@@ -226,7 +233,7 @@ plotSimpleTree <- function(factorMerger, statistic, clusterSplit,
                            alpha, color, colorsDf, palette = NULL,
                            title, subtitle, panelGrid) {
     # We want to have reverse order of variables! TODO
-    nodesPosition <- getFinalOrder(factorMerger, TRUE) %>% data.frame()
+    nodesPosition <- as.data.frame(getFinalOrder(factorMerger, TRUE))
     mH <- mergingHistory(factorMerger)
     noStep <- nrow(mH)
 
@@ -265,7 +272,7 @@ plotCustomizedTree <- function(factorMerger, statistic, clusterSplit,
         arrange(-y1)
     showY <- nodesSpacing != "equidistant"
 
-    g <- df %>% ggplot() +
+    g <- ggplot(df) +
         geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2), size = 0.5) +
         geom_point(data = pointsDf, aes(x = x1, y = y1), size = 0.75) +
         scale_y_continuous(limits = getLimits(labelsDf, showY),
@@ -278,8 +285,11 @@ plotCustomizedTree <- function(factorMerger, statistic, clusterSplit,
         labs(title = title,
              subtitle = subtitle) + treeTheme(panelGrid)
     if (color) {
-        g <- addClustersColors(g, segment, factorMerger,
-                               clusterSplit, statistic, palette)
+        g <- addClustersColors(g, segment = segment, 
+                               factorMerger = factorMerger,
+                               clusterSplit = clusterSplit, 
+                               statistic = statistic, 
+                               palette = palette)
     } else {
         clusterColors <- getClustersColorsNames(palette,
                                                 NROW(colorsDf),
@@ -501,6 +511,7 @@ plotResponse <- function(factorMerger, responsePanel,
 
 findSimilarities <- function(factorMerger) {
     stats <- calculateMeansAndRanks(factorMerger$response,
+                                    factorMerger$covariate,
                                     factorMerger$factor)
     varsToBePloted <- reshape(stats %>% subset(select = -mean),
                               idvar = "level",
@@ -834,6 +845,7 @@ getGICBreaks <- function(mH) {
 #' @param color GIC plot color.
 #' @param statistic cluster split statistic
 #' @param penalty GIC penalty
+#' @importFrom grDevices hcl
 #'
 #' @export
 plotGIC <- function(factorMerger, color, penalty = 2, statistic) {
@@ -905,6 +917,8 @@ plotTukey <- function(factorMerger, palette = NULL) {
     levelsOrder <- getFinalOrderVec(factorMerger)
     tukeyGroups <- tukeyGroups %>% melt(id.vars = "level") %>%
         filter(!is.na(value))
+    
+    cols <- scales::hue_pal()(length(levels(tukeyGroups$variable)))
 
     tukPlot <- tukeyGroups %>%
         ggplot(aes(variable, factor(level, levels = levelsOrder))) +
@@ -916,7 +930,8 @@ plotTukey <- function(factorMerger, palette = NULL) {
         xlab("") + treeTheme(FALSE) + theme(axis.text.y = element_blank())
 
     if (is.null(palette)) {
-        return(tukPlot)
+        return(tukPlot + 
+                   scale_fill_manual(values = rev(cols)))
     }
     return(tukPlot + scale_fill_brewer(direction = -1, palette = palette))
 }

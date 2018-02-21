@@ -25,8 +25,8 @@ drugName <- fct_lump(as.factor(drugName), prop = 0.05)
 
 
 ## ------------------------------------------------------------------------
-drugNameFM <- mergeFactors(brcaSurv[!is.na(drugName)], 
-                           drugName[!is.na(drugName)], 
+drugNameFM <- mergeFactors(response = brcaSurv[!is.na(drugName)], 
+                           factor = drugName[!is.na(drugName)], 
                            family = "survival")
 
 plot(drugNameFM, nodesSpacing = "effects", gicPanelColor = "grey2")
@@ -39,8 +39,8 @@ anova(coxph(brcaSurv[!is.na(drugName)] ~ cutTree(drugNameFM)))
 subtype <- BRCA$histologicalType
 subtype <- fct_lump(as.factor(subtype), prop = 0.05) 
 
-subtypeFM <- mergeFactors(brcaSurv[!is.na(subtype)], 
-                          subtype[!is.na(subtype)],
+subtypeFM <- mergeFactors(response = brcaSurv[!is.na(subtype)], 
+                          factor = subtype[!is.na(subtype)],
                            family = "survival")
 
 plot(subtypeFM) 
@@ -48,8 +48,8 @@ plot(subtypeFM)
 ## ------------------------------------------------------------------------
 patCat <- BRCA$pathologicCategory %>% substr(1, 2)
 
-patCatFM <- mergeFactors(brcaSurv[!is.na(patCat)],
-                         patCat[!is.na(patCat)],
+patCatFM <- mergeFactors(response = brcaSurv[!is.na(patCat)],
+                         factor = patCat[!is.na(patCat)],
                          family = "survival")
 
 plot(patCatFM, responsePanel = "frequency", gicPanelColor = "red")
