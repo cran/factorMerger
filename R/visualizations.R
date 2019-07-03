@@ -685,11 +685,7 @@ plotBoxplot <- function(factorMerger, color, clusterSplit, palette = NULL) {
         g <- df %>% ggplot(aes(y = y, x = group, group = group))
     }
 
-    g <- g + geom_boxplot(aes(ymin = y0,
-                         lower = y25,
-                         middle = y50,
-                         upper = y75,
-                         ymax = y100), stat = "identity") +
+    g <- g + geom_boxplot(aes(ymin = y0, lower = y25, middle = y50, upper = y75, ymax = y100), coef = 1000) +
         coord_flip() + treeTheme() + xlab("") + ylab("") +
         theme(axis.text.y = element_blank()) +
         labs(title = "Boxplot", subtitle = "Summary statistic: mean")

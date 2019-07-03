@@ -4,12 +4,13 @@
 \alias{plot.factorMerger}
 \title{Plot Factor Merger}
 \usage{
-\method{plot}{factorMerger}(x, panel = "all", statistic = "loglikelihood",
-  nodesSpacing = "equidistant", colorClusters = TRUE,
-  splitStatistic = "GIC", splitThreshold = NULL, penalty = 2,
-  showSplit = FALSE, showSignificance = TRUE,
-  title = "Factor Merger Tree", subtitle = " ", palette = NULL,
-  responsePanel = NULL, responsePanelPalette = NULL, gicPanelColor = NULL,
+\method{plot}{factorMerger}(x, panel = "all",
+  statistic = "loglikelihood", nodesSpacing = "equidistant",
+  colorClusters = TRUE, splitStatistic = "GIC",
+  splitThreshold = NULL, penalty = 2, showSplit = FALSE,
+  showSignificance = TRUE, title = "Factor Merger Tree",
+  subtitle = " ", palette = NULL, responsePanel = NULL,
+  responsePanelPalette = NULL, gicPanelColor = NULL,
   panelGrid = TRUE, chisqQuantile = 0.05, ...)
 }
 \arguments{
